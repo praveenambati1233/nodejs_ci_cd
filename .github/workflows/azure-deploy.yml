@@ -1,0 +1,69 @@
+name: Node + React CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------
+      # Setup Node.js
+      # -----------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # -----------------------
+      # Install Backend
+      # -----------------------
+      - name: Install backend dependencies
+        working-directory: ./server
+        run: npm install
+
+      # -----------------------
+      # Install Frontend
+      # -----------------------
+      - name: Install frontend dependencies
+        working-directory: ./client
+        run: npm install
+
+      # -----------------------
+      # Build React App
+      # -----------------------
+      - name: Build frontend
+        working-directory: ./client
+        run: npm run build
+
+      # -----------------------
+      # Start Backend Test
+      # -----------------------
+      - name: Start backend server
+        working-directory: ./server
+        run: |
+          node index.js &
+          sleep 5
+
+      # -----------------------
+      # Verify API
+      # -----------------------
+      - name: Test API endpoint
+        run: |
+          curl --fail http://localhost:5000/api/hello
